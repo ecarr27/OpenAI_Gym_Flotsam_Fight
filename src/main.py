@@ -20,30 +20,37 @@ for i in range(number_of_cards_per_hand):
 	for player in players:
 		player.hand.addCard(d.deal())
 
-roundNumber = 1
-passedPlayers = 0
-while(passedPlayers < len(players)-1):
-	print("\n___ ROUND", roundNumber, "___\n")
-	print("Current Hands:")
-	for player in players:
-		player.hand.sort()
-		print(player, ":", player.hand.list())
-
-	print("\n")
-
+gameWinner = False
+roundNumber = 0
+while(not gameWinner):
 	passedPlayers = 0
-	for player in players:
-		validMoves = player.getValidMoves(b)
-		print(player,":",validMoves)
-		if (len(validMoves)):
-			player.playCard(b, validMoves[0][0], validMoves[0][1][0])
-		else:
-			print(player, "passes")
+	while(passedPlayers < len(players)-1):
+		roundNumber = roundNumber + 1	
+		print("\n___ ROUND", roundNumber, "___\n")
+		print("Current Hands:")
+		for player in players:
+			player.hand.sort()
+			print(player, ":", player.hand.list())
 
-		if (player.isPass):
-			passedPlayers = passedPlayers + 1
-		print(b)
+		print("\n")
 
-	roundNumber = roundNumber + 1
-	
+		passedPlayers = 0
+		for player in players:
+			validMoves = player.getValidMoves(b)
+			print(player,":",validMoves)
+			if (len(validMoves)):
+				print("Playing this card:", validMoves[0][0], validMoves[0][1][0])
+				print(player.playCard(b, validMoves[0][0], validMoves[0][1][0]))
+				if (len(player.hand.cards) == 0):
+					gameWinner = player
+					passedPlayers = len(players)
+			else:
+				print(player, "passes")
+				if (player.isPass):
+					passedPlayers = passedPlayers + 1
+					
+			print(b)
+
+	b = Board(number_of_players)
+print(gameWinner, "won in", roundNumber, "rounds!")
 print("Ending Game")
