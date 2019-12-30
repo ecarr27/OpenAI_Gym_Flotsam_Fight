@@ -11,7 +11,8 @@ number_of_cards_per_hand = 10
 
 d = Deck()
 b = Board(number_of_players)
-players = [player for player in (Player() for i in range(number_of_players))]
+# players = [player for player in (Player() for i in range(number_of_players))]
+players = [Player("Albus"), Player("Bobby"), Player("Chloe"), Player("Debra")]
 
 print("Shuffling and dealing cards")
 d.shuffle()
@@ -19,25 +20,30 @@ for i in range(number_of_cards_per_hand):
 	for player in players:
 		player.hand.addCard(d.deal())
 
-print("Current Hands:")
-for player in players:
-	player.hand.sort()
-	print(player.hand.list())
+roundNumber = 1
+passedPlayers = 0
+while(passedPlayers < len(players)-1):
+	print("\n___ ROUND", roundNumber, "___\n")
+	print("Current Hands:")
+	for player in players:
+		player.hand.sort()
+		print(player, ":", player.hand.list())
 
-print("Player 0's Valid Moves:")
-validMoves = players[0].getValidMoves(b)
-print(validMoves)
+	print("\n")
 
-print("Player 0 plays their first card:")
-print(players[0].playCard(b, validMoves[0][0], validMoves[0][1][0]))
-print(b)
-# while(True):
-# 	hasValidMove = True
-# 	for player in players:
-# 		validMoves = player.getValidMoves(b)
-# 		player.
+	passedPlayers = 0
+	for player in players:
+		validMoves = player.getValidMoves(b)
+		print(player,":",validMoves)
+		if (len(validMoves)):
+			player.playCard(b, validMoves[0][0], validMoves[0][1][0])
+		else:
+			print(player, "passes")
+
+		if (player.isPass):
+			passedPlayers = passedPlayers + 1
+		print(b)
+
+	roundNumber = roundNumber + 1
 	
-
-# 	break
-
 print("Ending Game")
