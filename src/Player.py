@@ -8,4 +8,10 @@ class Player:
 		self.hand = Hand()
 
 	def getValidMoves(self, board):
-		return board
+		moves = []
+		for card in self.hand.cards:
+			move = [card.value]
+			move.append(board.getValidLifeboatsForCard(card))
+			moves.append(move)
+		return moves
+		
