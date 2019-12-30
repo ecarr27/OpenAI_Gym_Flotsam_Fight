@@ -6,11 +6,19 @@ class Hand:
 	def addCard(self, card):
 		self.cards.append(card)
 
-	def playCard(self, card, board, lifeboatNumber):
+	def getCard(self, number):
+		for card in self.cards:
+			if (card.value == number):
+				return card
+		return False
+
+	def playCard(self, board, card, lifeboatNumber):
 		if (not card in self.cards):
 			return False
-		
-		return board.addCardToLifeboat(card, lifeboatNumber)
+		didPlayCard = board.addCardToLifeboat(card, lifeboatNumber)
+		if (didPlayCard):
+			self.cards.remove(card)
+		return didPlayCard
 
 	def list(self):
 		values = []
