@@ -19,21 +19,27 @@ for i in range(number_of_cards_per_hand):
 	for player in players:
 		player.hand.addCard(d.deal())
 
-print("Current Hands:")
-for player in players:
-	player.hand.sort()
-	print(player.hand.list())
-	print(player.getValidMoves(b))
+# print("Current Hands:")
+# for player in players:
+# 	player.hand.sort()
+# 	print(player.hand.list())
+# 	print(player.getValidMoves(b))
 
+print(b, "\n")
 c = Card(3)
 b.addCardToLifeboat(c, 3)
+print(b, "\n")
 c = Card(4)
 b.addCardToLifeboat(c, 4)
+print(b, "\n")
 c = Card(5)
 b.addCardToLifeboat(c, 5)
+print(b, "\n")
 c = Card(6)
 b.addCardToLifeboat(c, 6)
+print(b, "\n")
 c = Card(7)
 b.addCardToLifeboat(c, 7)
+print(b, "\n")
 
 print("Ending Game")

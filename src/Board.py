@@ -13,7 +13,6 @@ class Board:
 			for number in lifeboats:
 				self.lifeboats.append(Lifeboat(number))
 
-
 	def lifeboats(self):
 		return self.lifeboatNumbers
 
@@ -36,7 +35,6 @@ class Board:
 		self.usedLifeboats.append(lifeboatNumber)
 		if (len(self.usedLifeboats) >= self.playerCount):
 			self.validLifeboats = self.usedLifeboats
-		print("Used Lifeboats:", self.usedLifeboats, "Valid Lifeboats:", self.validLifeboats)
 
 	def addCardToLifeboat(self, card, lifeboatNumber):
 		if (self.canAddCardToLifeboat(card, lifeboatNumber)):
@@ -46,3 +44,14 @@ class Board:
 			return addedCard
 		else:
 			return False
+
+	def getHighestNumbersAsString(self):
+		values = ""
+		for lifeboat in self.lifeboats:
+			values = values + str(lifeboat.highestValue()).rjust(3)
+		return values
+
+	def __str__(self):
+		boardString = ' '.join(str(i).rjust(2) for i in self.lifeboatNumbers)
+		highestValues = self.getHighestNumbersAsString()
+		return " " + boardString + "\n" + highestValues 
