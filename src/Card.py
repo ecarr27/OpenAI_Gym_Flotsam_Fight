@@ -20,3 +20,6 @@ class Card:
 
 	def __str__(self):
 		return str(self.value)
+
+	def __lt__(self, other):
+		return self.value < other.value

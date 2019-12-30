@@ -2,37 +2,27 @@ from Card import Card
 from Deck import Deck
 from Hand import Hand
 from Board import Board
+from Player import Player
 
-print("Starting Test")
+print("Starting Game")
 
 d = Deck()
 b = Board()
-h = Hand()
 
-c3 = Card(3)
-c15 = Card(15)
-c72 = Card(72)
+players = [player for player in (Player() for i in range(4))]
+number_of_cards_per_hand = 10
 
-h.addCard(c3)
-h.addCard(c15)
-h.addCard(c72)
+print("Shuffling and dealing cards")
+d.shuffle()
+for i in range(number_of_cards_per_hand):
+	for player in players:
+		player.hand.addCard(d.deal())
 
-print(h.playCard(c3, b, 3))
-print(h.playCard(c72, b, 3))
-print(h.playCard(c15, b, 3))
-# d.shuffle()
-# print(d.deal().value)
+print("Current Hands:")
+for player in players:
+	player.hand.sort()
+	print(player.hand.list())
 
-# hands = [Hand(), Hand(), Hand(), Hand()]
-
-# cards_per_hand = 10
-# k = 0
-# for i in range(cards_per_hand):
-# 	for j in range(len(hands)):
-# 		hands[j].addCard(d.deal())
-
-# for hand in hands:
-# 	print(hand.list())
-
-# print(d.list())
-print("Ending Test")
+print(b)
+print(players[0].getValidMoves(b))
+print("Ending Game")

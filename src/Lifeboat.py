@@ -6,7 +6,7 @@ class Lifeboat:
 		self.cards = []
 
 	def addCard(self, card):
-		if ((self.number in card.factors) and (self.highestValue() < card.value)):
+		if (self.canAddCard(card)):
 			self.cards.append(card)
 			return True
 		else:
@@ -26,3 +26,6 @@ class Lifeboat:
 			return self.cards[-1].value
 		else:
 			return 0
+
+	def canAddCard(self, card):
+		return ((self.number in card.factors) and (self.highestValue() < card.value))

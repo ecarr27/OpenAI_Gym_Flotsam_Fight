@@ -15,9 +15,15 @@ class Board:
 
 
 	def lifeboat(self, lifeboatNumber):
-		return self.lifeboats[lifeboatNumber - 3] # Hardcoded value - I feel bad about it but I need to build this out quickly
+		return self.lifeboats[lifeboatNumber - 3]
 
-	def addCardToLifeboat(self, card, lifeboatNumber):
+	def canAddCardToLifeboat(self, card, lifeboatNumber):
 		if (not lifeboatNumber in self.lifeboatNumbers):
 			return False
-		return self.lifeboat(lifeboatNumber).addCard(card)
+		return self.lifeboat(lifeboatNumber).canAddCard(card)
+
+	def addCardToLifeboat(self, card, lifeboatNumber):
+		if (self.canAddCardToLifeboat(card, lifeboatNumber)):
+			return self.lifeboat(lifeboatNumber).addCard(card)
+		else:
+			return False

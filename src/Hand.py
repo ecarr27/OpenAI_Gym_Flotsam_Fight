@@ -17,3 +17,6 @@ class Hand:
 		for card in self.cards:
 			values.append(str(card))
 		return values
+
+	def sort(self):
+		self.cards.sort()
