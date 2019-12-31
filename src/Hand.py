@@ -28,3 +28,10 @@ class Hand:
 
 	def sort(self):
 		self.cards.sort()
+
+	def highestCard(self):
+		if (len(self.cards)>0):
+			self.sort()
+			return self.cards[-1]
+		else:
+			return 0

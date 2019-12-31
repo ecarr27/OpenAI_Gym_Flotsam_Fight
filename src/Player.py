@@ -17,16 +17,29 @@ class Player:
 			if (len(validMoves)):
 				move.append(board.getValidLifeboatsForCard(card))
 				moves.append(move)
-		if (len(moves) == 0):
-			self.isPass = True
 		return moves
 
 	def playCard(self, board, cardNumber, lifeboatNumber):
 		if (self.isPass):
 			return False
 		card = self.hand.getCard(cardNumber)
-		print(card, lifeboatNumber)
 		return self.hand.playCard(board, card, lifeboatNumber)
+
+	def passTurn(self):
+		if (not self.isPass):
+			self.isPass = True
+			return True
+		return False
+
+	def newTrick(self):
+		self.isPass = False
+		self.hand.sort()
+
+	def addScore(self, score):
+		self.score = self.score + score
+
+	def highestCard(self):
+		return self.hand.highestCard()
 
 	def __str__(self):
 		return self.name
