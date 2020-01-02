@@ -41,29 +41,32 @@ class Player:
 	def highestCard(self):
 		return self.hand.highestCard()
 
-	def play(self, board):
+	def play(self, board, enabled=True):
 		validMoves = self.getValidMoves(board)
-		self.printValidMoves(validMoves)
+		self.printValidMoves(validMoves, enabled)
 		if (len(validMoves)): #If player has valid moves, play one
 			card, lifeboat = validMoves[0][0], validMoves[0][1][0]
-			self.printCardToPlay(card, lifeboat)
+			self.printCardToPlay(card, lifeboat, enabled)
 			self.playCard(board, card, lifeboat)
 			if (len(self.hand.cards) == 0):
 				return "Won"
 			return "Played"
 		else: #If no valid moves, pass							
-			self.printPlayerPasses()
+			self.printPlayerPasses(enabled)
 			return "Passed"
 
 	def __str__(self):
 		return self.name
 
-	def printValidMoves(self, validMoves):
-		print(self, ":", validMoves)
+	def printValidMoves(self, validMoves, enabled=True):
+		if(enabled):
+			print(self, ":", validMoves)
 
-	def printCardToPlay(self, card, lifeboat):
-		print("Playing", card, "in boat", lifeboat)
+	def printCardToPlay(self, card, lifeboat, enabled=True):
+		if(enabled):
+			print("Playing", card, "in boat", lifeboat)
 
-	def printPlayerPasses(self):
-		print(self, "passes")
+	def printPlayerPasses(self, enabled=True):
+		if(enabled):
+			print(self, "passes")
 		
