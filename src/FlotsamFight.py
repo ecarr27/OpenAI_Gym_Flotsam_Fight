@@ -113,8 +113,16 @@ class FlotsamFight:
 		return players 
 
 	def updateScores(self, players):
+		scores = {}
 		for player in players:
 			if (len(player.hand.cards) == 0):
 				player.addScore(2)
 			else: 
-				print(player, player.highestCard())
+				scores[player] = player.highestCard().value
+
+		sortedScores = {k: v for k, v in sorted(scores.items(), key=lambda item: item[1])}
+		lowestOfHighestCards = list(sortedScores)[0]
+		highestOfHighestCards = list(sortedScores)[-1]
+
+		lowestOfHighestCards.addScore(1)
+		highestOfHighestCards.addScore(-1)
