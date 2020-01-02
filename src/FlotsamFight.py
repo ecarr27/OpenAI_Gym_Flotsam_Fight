@@ -105,8 +105,11 @@ class FlotsamFight:
 			player.hand.addCard(d.deal())
 			player.hand.addCard(d.deal())
 
-	def orderPlayers(self, players, lastPlayerToPlay):
-		#Need to make the last player to play to be the first player 
+	def orderPlayers(self, players, lastPlayerToPlay): #Makes the last player to play to be the first player 
+		while(lastPlayerToPlay and players[0].name != lastPlayerToPlay.name):
+			player = players.pop(0)
+			players.append(player)
+
 		return players 
 
 	def updateScores(self, players):
