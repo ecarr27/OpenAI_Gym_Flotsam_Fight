@@ -29,11 +29,10 @@ class FlotsamFight:
 
 			gameWinner = False
 			roundNumber = 0
-
+			lastPlayerToPlay = None
 			#Game Loop
 			while(not gameWinner):
 				self.printNewTrick()
-				lastPlayerToPlay = None
 				passedPlayers = 0
 				[self.deal2Cards(d, player) for player in players] #If a player is down to 1 card at the start of a trick, deal 2 more cards
 				[player.newTrick() for player in players]
