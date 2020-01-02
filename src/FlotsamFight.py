@@ -12,58 +12,64 @@ class FlotsamFight:
 		number_of_players = 4
 		number_of_cards_per_hand = 10
 
-		d = Deck()
-		b = Board(number_of_players)
 		# players = [player for player in (Player() for i in range(number_of_players))]
 		players = [Player("Albus"), Player("Bobby"), Player("Chloe"), Player("Debra")]
 
-		print("Shuffling and dealing cards")
-		d.shuffle()
-		for i in range(number_of_cards_per_hand):
-			for player in players:
-				player.hand.addCard(d.deal())
+		#Grand Prix Loop
+		for gameNumber in range(1,4):
+			self.printGameHeader(gameNumber, players)
+			
+			d = Deck()
+			d.shuffle()
 
-		gameWinner = False
-		roundNumber = 0
-
-		#Game Loop
-		while(not gameWinner):
-			self.printNewTrick()
-			lastPlayerToPlay = None
-			passedPlayers = 0
-			[self.deal2Cards(d, player) for player in players] #If a player is down to 1 card at the start of a trick, deal 2 more cards
-			[player.newTrick() for player in players]
-
-			#Trick Loop
-			while(passedPlayers < len(players)-1): #If at least two players haven't passed, keep playing 
-				roundNumber = roundNumber + 1
-				self.printRoundHeader(roundNumber, players, passedPlayers)	
-				players = self.orderPlayers(players, lastPlayerToPlay) #Player who played last goes first
-
+			b = Board(number_of_players)
+			for i in range(number_of_cards_per_hand):
 				for player in players:
-					validMoves = player.getValidMoves(b)
-					self.printValidMoves(player, validMoves)
-					if (len(validMoves)): #If player has valid moves, play one
-						card, lifeboat = validMoves[0][0], validMoves[0][1][0]
-						self.printCardToPlay(card, lifeboat)
-						player.playCard(b, card, lifeboat)
-						lastPlayerToPlay = player
-						if (len(player.hand.cards) == 0):
-							passedPlayers = len(players)
-							gameWinner = player
-					else: #If no valid moves, pass							
-						self.printPlayerPasses(player)
-						if (player.passTurn()):
-							passedPlayers = passedPlayers + 1
-					print(b,"\n")
+					player.hand.addCard(d.deal())
 
-			self.printLastPlayerToPlay(lastPlayerToPlay)
-			b = Board(number_of_players) #Wipe the board and start a new trick
+			gameWinner = False
+			roundNumber = 0
 
-		self.printGameWinner(gameWinner, roundNumber)
-		self.updateScores(players)
-		print("Ending Game")
+			#Game Loop
+			while(not gameWinner):
+				self.printNewTrick()
+				lastPlayerToPlay = None
+				passedPlayers = 0
+				[self.deal2Cards(d, player) for player in players] #If a player is down to 1 card at the start of a trick, deal 2 more cards
+				[player.newTrick() for player in players]
 
+				#Trick Loop
+				while(passedPlayers < len(players)-1): #If at least two players haven't passed, keep playing 
+					roundNumber = roundNumber + 1
+					self.printRoundHeader(roundNumber, players, passedPlayers)	
+					players = self.orderPlayers(players, lastPlayerToPlay) #Player who played last goes first
+
+					for player in players:
+						validMoves = player.getValidMoves(b)
+						self.printValidMoves(player, validMoves)
+						if (len(validMoves)): #If player has valid moves, play one
+							card, lifeboat = validMoves[0][0], validMoves[0][1][0]
+							self.printCardToPlay(card, lifeboat)
+							player.playCard(b, card, lifeboat)
+							lastPlayerToPlay = player
+							if (len(player.hand.cards) == 0):
+								passedPlayers = len(players)
+								gameWinner = player
+								break
+						else: #If no valid moves, pass							
+							self.printPlayerPasses(player)
+							if (player.passTurn()):
+								passedPlayers = passedPlayers + 1
+						print(b,"\n")
+
+				self.printLastPlayerToPlay(lastPlayerToPlay)
+				b = Board(number_of_players) #Wipe the board and start a new trick
+
+			self.printGameWinner(gameWinner, roundNumber)
+			self.updateScores(players)
+			self.printGameFooter()
+
+		self.printPlayerScores(players)
 
 	def printNewTrick(self):
 		print("\n_________________\n___ NEW TRICK ___\n_________________")
@@ -98,6 +104,26 @@ class FlotsamFight:
 
 	def printGameWinner(self, gameWinner, roundNumber):
 		print(gameWinner, "won in", roundNumber, "rounds!")
+
+	def printGameHeader(self, gameNumber, players):
+		print("\n____ GAME", gameNumber, "____")
+		print("Scores:")
+		self.printPlayerScores(players)
+		print("----------------")
+		print("Shuffling and dealing cards\n")
+
+	def printGameFooter(self):
+		print("Ending Game\n")
+
+	def printPlayerScores(self, players):
+		scores = {}
+		for player in players:
+			scores[player] = player.score
+
+		sortedScores = {k: v for k, v in sorted(scores.items(), key=lambda item: item[1])}
+
+		for player in reversed(list(sortedScores)):
+			print(player, str(sortedScores[player]).rjust(2))
 
 	def deal2Cards(self, d, player):
 		if(len(player.hand.cards) == 1):
