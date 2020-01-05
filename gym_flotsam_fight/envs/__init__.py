@@ -1,0 +1,1 @@
+from gym_flotsam_fight.envs.flotsam_fight_env import FlotsamFightEnv
