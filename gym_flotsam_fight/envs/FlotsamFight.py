@@ -6,33 +6,22 @@ from Player import Player
 
 class FlotsamFight:
 
-	def seed(self, seed=None):
-		# self.np_random, seed = seeding.np_random(seed)
-  #       return [seed]
-		return False
+	def init(self):
+		number_of_players = 4
+		number_of_cards_per_hand = 10
+		players = [Player("Albus", True), Player("Bobby"), Player("Chloe"), Player("Debra")]
 
-	def step(self, action):
-		return False
-
-	def reset(self):
-		return False
-
-	def render(self):
-		return False
-
-	def close(self):
-		return False
-
-	def test(self):
 		d = Deck()
-		maxCard, maxFactors = None, None
-		maxFactorLen = 0
-		for card in d.cards:
-			print(card, card.factors)
-			if (len(card.factors) > maxFactorLen):
-				maxCard, maxFactors = card, card.factors
-				maxFactorLen = len(card.factors)
-		print(card, card.factors)
+		d.shuffle()
+
+		b = Board(number_of_players)
+		for i in range(number_of_cards_per_hand):
+				for player in players:
+					player.hand.addCard(d.deal())
+
+		print("hit")
+
+
 
 	def play(self, gameCount = 3, loud=True):
 		# print("Starting Game")

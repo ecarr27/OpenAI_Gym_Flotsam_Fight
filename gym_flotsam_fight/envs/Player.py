@@ -3,11 +3,12 @@ from Board import Board
 
 class Player:
 
-	def __init__(self, name):
+	def __init__(self, name, isAgent=False):
 		self.score = 0
 		self.hand = Hand()
 		self.isPass = False
 		self.name = name
+		self.isAgent = isAgent
 
 	def getValidMoves(self, board):
 		moves = []
@@ -41,7 +42,7 @@ class Player:
 	def highestCard(self):
 		return self.hand.highestCard()
 
-	def play(self, board, enabled=True):
+	def autoPlay(self, board, enabled=True):
 		validMoves = self.getValidMoves(board)
 		self.printValidMoves(validMoves, enabled)
 		if (len(validMoves)): #If player has valid moves, play one
@@ -54,6 +55,11 @@ class Player:
 		else: #If no valid moves, pass							
 			self.printPlayerPasses(enabled)
 			return "Passed"
+
+	def play(self, board, action, enabled=True):
+		# validMoves = self.getValidMoves(board)
+		# return self.playCard(board, validMoves[action[0]][0], validMoves[action[0]][1][action[1]])
+		return self.playCard(board, action[0], action[1])
 
 	def __str__(self):
 		return self.name

@@ -35,3 +35,6 @@ class Hand:
 			return self.cards[-1]
 		else:
 			return 0
+
+	def cardValues(self):
+		return [card.value for card in self.cards]
