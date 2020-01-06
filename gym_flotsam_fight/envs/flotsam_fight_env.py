@@ -12,7 +12,7 @@ class FlotsamFightEnv(gym.Env):
 
 	def __init__(self):
 		self.number_of_players = 4
-		self.number_of_cards_per_hand = 10
+		self.number_of_cards_per_hand = 3
 		self.players = [Player("Albus", True), Player("Bobby"), Player("Chloe"), Player("Debra")]
 		self.agent = self.players[0]
 
@@ -26,21 +26,57 @@ class FlotsamFightEnv(gym.Env):
 
 		[player.hand.sort() for player in self.players]
 
-		self.ameWinner = False
+		self.gameWinner = False
 		self.roundNumber = 0
 		self.lastPlayerToPlay = None
+		self.passedPlayers = 0
   
 	def step(self, action):
-		self.agent.play(self.b, action)
-		[player.autoPlay(self.b) for player in (player for player in self.players) if not player.isAgent]
+		if (self.gameWinner):
+			return False
+
+		self.orderPlayers(self.players, self.agent) #Put Agent to play first
+
+		for player in self.players:
+			print(player)
+
+			play = False
+			if (player.isAgent):
+				play = player.play(self.b, action)
+			else:
+				play = player.autoPlay(self.b)
+
+			if (play == False):
+				break
+			elif (play == "Played"):
+				self.lastPlayerToPlay = player
+			elif (play == "Won"):
+				self.lastPlayerToPlay = player
+				self.passedPlayers = len(self.players)
+				self.gameWinner = player
+				break
+			elif (play == "Passed" and player.passTurn()):
+				self.passedPlayers = self.passedPlayers + 1
+
+		boardState = self.b.state()
+		hand = self.agent.hand.cardValues()
+		competitorCardCounts = self.competitorCardCounts(self.players)
+
+		isWon = True if self.gameWinner else False
+
+		agentMoves = self.agent.getValidMoves(self.b)
+		competitorsHands = self.competitorsHands(self.players)
+
+		return [[boardState, hand, competitorCardCounts], isWon, 0, [agentMoves, competitorsHands]]
 
 	def reset(self):
-		print("reset")
+		self.__init__()
   
 	def render(self, mode='human', close=False):
 		self.printBoard(self.b)
 		[print(player.hand.cardValues()) for player in (player for player in self.players) if player.isAgent]
 		self.printPlayerCardCounts(self.players) 
+		print(self.agent.getValidMoves(self.b))
 
 	def play(self, gameCount = 3, loud=True):
 		# print("Starting Game")
@@ -105,8 +141,7 @@ class FlotsamFightEnv(gym.Env):
 		self.printGrandPrixFooter(players, True)
 
 	def test(self):
-		c = Card(57);
-		return c.factors
+		return self.b.state()
 
 	def printNewTrick(self, loud=True):
 		if (loud):
@@ -177,6 +212,20 @@ class FlotsamFightEnv(gym.Env):
 	def printPlayerCardCounts(self, players, loud=True):
 		if (loud):
 			[print(player, ":", len(player.hand.cards)) for player in players]
+
+	def competitorCardCounts(self, players):
+		cardCounts = []
+		for player in players:
+			if (not player.isAgent):
+				cardCounts.append(len(player.hand.cards))
+		return cardCounts
+
+	def competitorsHands(self, players):
+		hands = []
+		for player in players:
+			if (not player.isAgent):
+				hands.append(player.hand.cardValues())
+		return hands
 
 	def sortScores(self, players):
 		scores = {}

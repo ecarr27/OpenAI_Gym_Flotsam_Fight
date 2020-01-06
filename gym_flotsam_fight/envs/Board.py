@@ -51,6 +51,9 @@ class Board:
 			values = values + str(lifeboat.highestValue()).rjust(3)
 		return values
 
+	def state(self):
+		return [lifeboat.highestValue() for lifeboat in self.lifeboats]
+
 	def __str__(self):
 		boardString = ' '.join(str(i).rjust(2) for i in self.lifeboatNumbers)
 		highestValues = self.getHighestNumbersAsString()

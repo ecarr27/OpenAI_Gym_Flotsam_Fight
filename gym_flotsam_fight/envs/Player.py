@@ -59,7 +59,23 @@ class Player:
 	def play(self, board, action, enabled=True):
 		# validMoves = self.getValidMoves(board)
 		# return self.playCard(board, validMoves[action[0]][0], validMoves[action[0]][1][action[1]])
-		return self.playCard(board, action[0], action[1])
+	
+		if (action == [-1, -1] or self.isPass):
+			self.printPlayerPasses(enabled)
+			self.passTurn
+			return "Pass"
+
+		self.printCardToPlay(action[0], action[1], enabled)
+		successfulPlay = self.playCard(board, action[0], action[1])
+		if (not successfulPlay):
+			return False
+		elif (successfulPlay and len(self.hand.cards) == 0):
+			returnValue = "Won"
+		elif (successfulPlay):
+			return successfulPlay
+		else:
+			print("Error in Player.Play()")
+			return False
 
 	def __str__(self):
 		return self.name
