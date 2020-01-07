@@ -54,6 +54,7 @@ class Player:
 			return "Played"
 		else: #If no valid moves, pass							
 			self.printPlayerPasses(enabled)
+			self.passTurn()
 			return "Passed"
 
 	def play(self, board, action, enabled=True):
@@ -62,7 +63,7 @@ class Player:
 	
 		if (action == [-1, -1] or self.isPass):
 			self.printPlayerPasses(enabled)
-			self.passTurn
+			self.passTurn()
 			return "Pass"
 
 		self.printCardToPlay(action[0], action[1], enabled)

@@ -12,7 +12,7 @@ class FlotsamFightEnv(gym.Env):
 
 	def __init__(self):
 		self.number_of_players = 4
-		self.number_of_cards_per_hand = 3
+		self.number_of_cards_per_hand = 10
 		self.players = [Player("Albus", True), Player("Bobby"), Player("Chloe"), Player("Debra")]
 		self.agent = self.players[0]
 
@@ -29,7 +29,6 @@ class FlotsamFightEnv(gym.Env):
 		self.gameWinner = False
 		self.roundNumber = 0
 		self.lastPlayerToPlay = None
-		self.passedPlayers = 0
   
 	def step(self, action):
 		if (self.gameWinner):
@@ -52,11 +51,19 @@ class FlotsamFightEnv(gym.Env):
 				self.lastPlayerToPlay = player
 			elif (play == "Won"):
 				self.lastPlayerToPlay = player
-				self.passedPlayers = len(self.players)
 				self.gameWinner = player
+				self.updateScores(self.players)
+				self.printPlayerScores(self.players, True)
 				break
-			elif (play == "Passed" and player.passTurn()):
-				self.passedPlayers = self.passedPlayers + 1
+			elif (play == "Passed" and self.countPassedPlayers(self.players) >= len(self.players) - 1): #Ending trick
+				[self.deal2Cards(self.d, player, True) for player in self.players] #If a player is down to 1 card at the start of a trick, deal 2 more cards
+				[player.newTrick() for player in self.players]
+				players = self.orderPlayers(self.players, self.lastPlayerToPlay) #Player who played last goes first
+				#Need to accommodate when the order changes and the agent isn't first
+				self.b = Board(self.number_of_players) #Wipe the board and start a new trick
+				break
+
+		self.roundNumber = self.roundNumber+1	
 
 		boardState = self.b.state()
 		hand = self.agent.hand.cardValues()
@@ -141,7 +148,7 @@ class FlotsamFightEnv(gym.Env):
 		self.printGrandPrixFooter(players, True)
 
 	def test(self):
-		return self.b.state()
+		return self.countPassedPlayers(self.players)
 
 	def printNewTrick(self, loud=True):
 		if (loud):
@@ -233,6 +240,13 @@ class FlotsamFightEnv(gym.Env):
 			scores[player] = player.score
 
 		return {k: v for k, v in sorted(scores.items(), key=lambda item: item[1])}
+
+	def countPassedPlayers(self, players):
+		passedPlayers = 0;
+		for player in players:
+			if (player.isPass):
+				passedPlayers = passedPlayers + 1
+		return passedPlayers
 
 	def deal2Cards(self, d, player, loud):
 		if(len(player.hand.cards) == 1 and len(d.cards)>= 2):
