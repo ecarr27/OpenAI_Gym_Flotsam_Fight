@@ -4,7 +4,6 @@ from Card import Card
 
 class Deck:
 	def __init__(self):
-		self.cards = []
 		self.cards = [card for card in (Card(number) for number in range(2, 99)) if card.valid]
 
 	def __str__(self):

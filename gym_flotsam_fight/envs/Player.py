@@ -3,6 +3,10 @@ from Board import Board
 
 class Player:
 
+	PLAY = "Play"
+	PASS = "Pass"
+	WON  = "WON"
+
 	def __init__(self, name, isAgent=False):
 		self.score = 0
 		self.hand = Hand()
@@ -50,28 +54,28 @@ class Player:
 			self.printCardToPlay(card, lifeboat, enabled)
 			self.playCard(board, card, lifeboat)
 			if (len(self.hand.cards) == 0):
-				return "Won"
-			return "Played"
+				return self.WON
+			return self.PLAY
 		else: #If no valid moves, pass							
 			self.printPlayerPasses(enabled)
 			self.passTurn()
-			return "Passed"
+			return self.PASS
 
 	def play(self, board, action, enabled=True):
-		# validMoves = self.getValidMoves(board)
-		# return self.playCard(board, validMoves[action[0]][0], validMoves[action[0]][1][action[1]])
+		if (not self.isAgent):
+			return self.autoPlay(board, enabled)
 	
 		if (action == [-1, -1] or self.isPass):
 			self.printPlayerPasses(enabled)
 			self.passTurn()
-			return "Pass"
+			return self.PASS
 
 		self.printCardToPlay(action[0], action[1], enabled)
 		successfulPlay = self.playCard(board, action[0], action[1])
 		if (not successfulPlay):
 			return False
 		elif (successfulPlay and len(self.hand.cards) == 0):
-			returnValue = "Won"
+			returnValue = self.WON
 		elif (successfulPlay):
 			return successfulPlay
 		else:

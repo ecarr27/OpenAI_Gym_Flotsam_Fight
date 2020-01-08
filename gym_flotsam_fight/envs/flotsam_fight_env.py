@@ -14,11 +14,11 @@ from Player import Player
 class FlotsamFightEnv(gym.Env):
 	metadata = {'render.modes': ['human']}
 
-	def __init__(self):
+	def __init__(self, loud=False):
 		self.number_of_players = 4
 		self.number_of_cards_per_hand = 10
-		self.players = [Player("Albus", True), Player("Bobby"), Player("Chloe"), Player("Debra")]
-		self.agent = self.players[0]
+		self.players = deque([Player("Albus"), Player("Bobby"), Player("Chloe", True), Player("Debra")])
+		self.agent = self.players[2]
 
 		self.d = Deck()
 		self.d.shuffle()
@@ -32,43 +32,50 @@ class FlotsamFightEnv(gym.Env):
 
 		self.gameWinner = False
 		self.roundNumber = 0
+		self.firstPlayer = self.players[0]
 		self.lastPlayerToPlay = None
+		self.nextPlayerIndex = 0
+
+		if (self.agent and not self.players[0].isAgent): #Let all non-agent players play so the next time step() is called, an agent will be up
+			self.step(loud)
   
-	def step(self, action):
+	def step(self, action=None, loud=True):
 		#The goal of this is to get 
 		if (self.gameWinner):
 			return False
 
-		self.orderPlayers(self.players, self.agent) #Put Agent to play first
+		for i in range(len(self.players)):
+			player = self.players[i]
 
-		for player in self.players:
-			print(player)
+			if (player == self.firstPlayer):
+				self.roundNumber = self.roundNumber + 1
 
-			play = False
-			if (player.isAgent):
-				play = player.play(self.b, action)
-			else:
-				play = player.autoPlay(self.b)
-
+			play = player.play(self.b, action, loud)
 			if (play == False):
+				self.nextPlayerIndex = i
+				self.lastPlayerToPlay = player
 				break
-			elif (play == "Played"):
-				self.lastPlayerToPlay = player
-			elif (play == "Won"):
-				self.lastPlayerToPlay = player
-				self.gameWinner = player
+			elif (play == Player.PLAY):
+				self.nextPlayerIndex = (i+1) % len(self.players)
+			elif (play == Player.WON):
+				self.gameWinner = self.lastPlayerToPlay = player
 				self.updateScores(self.players)
-				self.printPlayerScores(self.players, True)
+				self.printPlayerScores(self.players, loud)
 				break
-			elif (play == "Passed" and self.countPassedPlayers(self.players) >= len(self.players) - 1): #Ending trick
-				[self.deal2Cards(self.d, player, True) for player in self.players] #If a player is down to 1 card at the start of a trick, deal 2 more cards
+			elif (play == Player.PASS and self.countPassedPlayers(self.players) >= len(self.players)-1): #Ending trick
+				[self.deal2Cards(self.d, player, loud) for player in self.players] #If a player is down to 1 card at the start of a trick, deal them 2 more cards
 				[player.newTrick() for player in self.players]
-				players = self.orderPlayers(self.players, self.lastPlayerToPlay) #Player who played last goes first
-				#Need to accommodate when the order changes and the agent isn't first
+				player = self.orderPlayers(self.players, self.lastPlayerToPlay) #Player who played last goes first next round
+				self.firstPlayer = self.players[0]
 				self.b = Board(self.number_of_players) #Wipe the board and start a new trick
 				break
+			elif(play == Player.PASS):
+				self.nextPlayerIndex = (i+1) % len(self.players)
 
-		self.roundNumber = self.roundNumber+1	
+			if (self.players[self.nextPlayerIndex].isAgent):
+				break
+
+		self.players.rotate(-1*self.nextPlayerIndex)	
 
 		boardState = self.b.state()
 		hand = self.agent.hand.cardValues()
@@ -79,16 +86,18 @@ class FlotsamFightEnv(gym.Env):
 		agentMoves = self.agent.getValidMoves(self.b)
 		competitorsHands = self.competitorsHands(self.players)
 
-		return [[boardState, hand, competitorCardCounts], isWon, 0, [agentMoves, competitorsHands]]
+		return [[boardState, hand, competitorCardCounts, self.roundNumber], isWon, 0, [agentMoves, competitorsHands]]
 
 	def reset(self):
 		self.__init__()
   
 	def render(self, mode='human', close=False):
-		self.printBoard(self.b)
-		[print(player.hand.cardValues()) for player in (player for player in self.players) if player.isAgent]
-		self.printPlayerCardCounts(self.players) 
-		print(self.agent.getValidMoves(self.b))
+		self.printRoundHeader(self.roundNumber, self.players, self.passedPlayers(self.players), True)
+		if (self.gameWinner):
+			self.printPlayerScores(self.players)
+		else:
+			self.printBoard(self.b)
+			[print(player, ":", player.getValidMoves(self.b)) for player in (player for player in self.players) if player.isAgent]
 
 	def play(self, gameCount = 3, loud=True):
 		# print("Starting Game")
@@ -157,45 +166,11 @@ class FlotsamFightEnv(gym.Env):
 			return index-len(players)
 		return index
 	def test(self):
-		"""
-			Goals:
-			Loop through list of players
-			If there is an agent (that is not the first in the queue), have everyone play until it is at the front of the queue
-			For example, you have these players [A, B, C*, D, E, F], where C is an agent.
-			First play through:
-				A plays, B plays. Loop stops and C is at the front of the list
-			Second play through:
-				C plays, D plays, E plays, F plays, A plays, B plays
-			Third play through:
-				C plays, D plays, E plays, F plays, A plays, B plays
+		return self.passedPlayers(self.players)
 
-			Now consider this example: [A, B, C*, D, E*, F]
-			First pass:
-				A plays, B plays. Loop stops and C is at the front of the list
-			Second Pass:
-				C plays, D plays, Loop stops and E is at the front of the list
-			Third Pass:
-				E plays, F plays, A plays, B plays, Loop stops and C is at the front of the list
-
-			Now consider this example: [A, B, C*, D, E*, F], but F will get to play twice
-				I don't think I'll consider this for now.
-				Lets get the loop working then come back to this
-		"""
-		players = deque([Player('A'), Player('B'), Player('C', True), Player('D'), Player('E', True), Player('F')])
-
-		print("Players: [A, B, C*, D, E*, F]   (* == Agent)")
-		currentPlayer = None
-		startPlayer = players[0]
-
-		for i in range(5):
-			print("starting loop")
-			nextPlayer = None
-			for player in players:
-				nextPlayerIndex = self.correctPlayerIndex(players, players.index(player)+1)
-				print(player)
-				if (players[nextPlayerIndex].isAgent):
-					break
-			players.rotate(-1*nextPlayerIndex)
+	def printPlayer(self, player, loud=True):
+		if (loud):
+			print(player)
 
 	def printNewTrick(self, loud=True):
 		if (loud):
@@ -208,7 +183,7 @@ class FlotsamFightEnv(gym.Env):
 	def printCurrentHands(self, players, loud=True):
 		if (loud):
 			print("Current Hands:")
-			[print(player.hand.list()) for player in players]
+			[print(player, "(", len(player.hand.cards), ")", ":", player.hand.list()) for player in players]
 
 	def printPassedPlayers(self, passedPlayers, loud=True):
 		if (loud):
@@ -288,12 +263,11 @@ class FlotsamFightEnv(gym.Env):
 
 		return {k: v for k, v in sorted(scores.items(), key=lambda item: item[1])}
 
+	def passedPlayers(self, players):
+		return [player.name for player in (player for player in players) if player.isPass]
+
 	def countPassedPlayers(self, players):
-		passedPlayers = 0;
-		for player in players:
-			if (player.isPass):
-				passedPlayers = passedPlayers + 1
-		return passedPlayers
+		return len(self.passedPlayers(players))
 
 	def deal2Cards(self, d, player, loud):
 		if(len(player.hand.cards) == 1 and len(d.cards)>= 2):
@@ -303,11 +277,12 @@ class FlotsamFightEnv(gym.Env):
 			player.hand.addCard(d.deal())
 
 	def orderPlayers(self, players, lastPlayerToPlay): #Makes the last player to play to be the first player 
-		while(lastPlayerToPlay and players[0].name != lastPlayerToPlay.name):
-			player = players.pop(0)
-			players.append(player)
+		if(not lastPlayerToPlay):
+			return players 
 
-		return players 
+		indexOfLastPlayerToPlay = players.index(lastPlayerToPlay);
+		players.rotate(indexOfLastPlayerToPlay*-1)
+		return players
 
 	def updateScores(self, players):
 		scores = {}
