@@ -1,6 +1,10 @@
 import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
+
+from collections import deque
+from itertools import cycle
+
 from Card import Card
 from Deck import Deck
 from Hand import Hand
@@ -31,6 +35,7 @@ class FlotsamFightEnv(gym.Env):
 		self.lastPlayerToPlay = None
   
 	def step(self, action):
+		#The goal of this is to get 
 		if (self.gameWinner):
 			return False
 
@@ -147,8 +152,50 @@ class FlotsamFightEnv(gym.Env):
 
 		self.printGrandPrixFooter(players, True)
 
+	def correctPlayerIndex(self, players, index):
+		if(index >= len(players)):
+			return index-len(players)
+		return index
 	def test(self):
-		return self.countPassedPlayers(self.players)
+		"""
+			Goals:
+			Loop through list of players
+			If there is an agent (that is not the first in the queue), have everyone play until it is at the front of the queue
+			For example, you have these players [A, B, C*, D, E, F], where C is an agent.
+			First play through:
+				A plays, B plays. Loop stops and C is at the front of the list
+			Second play through:
+				C plays, D plays, E plays, F plays, A plays, B plays
+			Third play through:
+				C plays, D plays, E plays, F plays, A plays, B plays
+
+			Now consider this example: [A, B, C*, D, E*, F]
+			First pass:
+				A plays, B plays. Loop stops and C is at the front of the list
+			Second Pass:
+				C plays, D plays, Loop stops and E is at the front of the list
+			Third Pass:
+				E plays, F plays, A plays, B plays, Loop stops and C is at the front of the list
+
+			Now consider this example: [A, B, C*, D, E*, F], but F will get to play twice
+				I don't think I'll consider this for now.
+				Lets get the loop working then come back to this
+		"""
+		players = deque([Player('A'), Player('B'), Player('C', True), Player('D'), Player('E', True), Player('F')])
+
+		print("Players: [A, B, C*, D, E*, F]   (* == Agent)")
+		currentPlayer = None
+		startPlayer = players[0]
+
+		for i in range(5):
+			print("starting loop")
+			nextPlayer = None
+			for player in players:
+				nextPlayerIndex = self.correctPlayerIndex(players, players.index(player)+1)
+				print(player)
+				if (players[nextPlayerIndex].isAgent):
+					break
+			players.rotate(-1*nextPlayerIndex)
 
 	def printNewTrick(self, loud=True):
 		if (loud):
