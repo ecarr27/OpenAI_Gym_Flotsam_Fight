@@ -3,7 +3,7 @@ from Board import Board
 
 class Player:
 
-	PLAY = "Play"
+	PLAY = True
 	PASS = "Pass"
 	WON  = "WON"
 
@@ -62,10 +62,9 @@ class Player:
 			return self.PASS
 
 	def play(self, board, action, enabled=True):
-		if (not self.isAgent):
+		if (not self.isAgent or action == [-2, -2]):
 			return self.autoPlay(board, enabled)
-	
-		if (action == [-1, -1] or self.isPass):
+		elif (action == [-1, -1] or self.isPass):
 			self.printPlayerPasses(enabled)
 			self.passTurn()
 			return self.PASS
