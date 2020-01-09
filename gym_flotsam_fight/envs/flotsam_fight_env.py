@@ -15,7 +15,7 @@ class FlotsamFightEnv(gym.Env):
 	metadata = {'render.modes': ['human']}
 
 	def __init__(self, loud=False):
-		self.players = deque([Player("Albus"), Player("Bobby",True), Player("Chloe"), Player("Debra")])
+		self.players = deque([Player("Albus", False, True), Player("Bobby",True), Player("Chloe", False, False), Player("Debra", False, True)])
 		self.number_of_players = len(self.players)
 
 		self.number_of_cards_per_hand = 10
@@ -40,47 +40,70 @@ class FlotsamFightEnv(gym.Env):
 			self.step(loud)
   
 	def step(self, action=None, loud=True):
-		#The goal of this is to get 
 		if (self.gameWinner):
 			return False
-	
+		print("Hit firstPlayer: ",self.firstPlayer, "nextPlayerIndex:", self.nextPlayerIndex)
 		player = None
 		for i in range(len(self.players)):
 			player = self.players[i]
+			print("Hit2",player)
 			if (player == self.firstPlayer):
 				self.roundNumber = self.roundNumber + 1
 
 			play = player.play(self.b, action, loud)
+			print("Hit3",play)
 			if (play == False):
+				print("Hit4")
 				self.nextPlayerIndex = i
 				break
 			elif (play == Player.PLAY):
+				print("Hit5")
 				self.nextPlayerIndex = (i+1) % len(self.players)
 				self.lastPlayerToPlay = player
 			elif (play == Player.WON):
+				print("Hit6")
 				self.gameWinner = self.lastPlayerToPlay = player
 				self.updateScores(self.players)
 				self.printPlayerScores(self.players, loud)
 				break
-			elif (play == Player.PASS and self.countPassedPlayers(self.players) >= len(self.players)-1): #Ending trick
-				[self.deal2Cards(self.d, player, loud) for player in self.players] #If a player is down to 1 card at the start of a trick, deal them 2 more cards
+																						#Ending the trick if
+			elif (play == Player.PASS and 												#This player passes
+					self.countPassedPlayers(self.players) >= len(self.players)-1 and 	#And all but one player has passed
+					len(self.players[(i+1)%len(self.players)].hand.cards) > 1):		 	#And the next player has more than 1 card left
+				print("Hit7")
+				[self.deal2Cards(self.d, player, loud) for player in self.players] 		#If a player is down to 1 card at the start of a trick, deal them 2 more cards
 				[player.newTrick() for player in self.players]
-				self.players = self.orderPlayers(self.players, self.lastPlayerToPlay) #Player who played last goes first next round
+				self.players = self.orderPlayers(self.players, self.lastPlayerToPlay) 	#Player who played last goes first next round
 				self.firstPlayer = self.players[0]
 				self.nextPlayerIndex = 0
-				self.b = Board(self.number_of_players) #Wipe the board and start a new trick
+				self.b = Board(self.number_of_players) 									#Wipe the board and start a new trick
 				self.printNewTrick(loud)
-				if (not self.firstPlayer.isAgent):
-					self.step(action, loud)
+				if (not self.firstPlayer.isAgent):										#Need to fast forward to the next agent
+					print("Hit10")
+					self.step(action, loud) 
+					"""
+					This doesn't work.
+					A, B*, C, D
+
+					A Pass, B* Pass, C Plays, D Pass
+					What should happen:
+						A Pass, pause on B
+
+					What actually happens:
+						C Plays, D Pass, A Pass, pause on A
+
+					Need a way to just play the non agents
+					"""
 				break
 			elif(play == Player.PASS):
+				print("Hit8")
 				self.nextPlayerIndex = (i+1) % len(self.players)
 
 			if (self.players[self.nextPlayerIndex].isAgent):
 				break	
 
 		self.players.rotate(-1*self.nextPlayerIndex)
-	
+		print("Hit9")
 		#Observations
 		boardState = self.b.state()
 		hand = player.hand.cardValues()
