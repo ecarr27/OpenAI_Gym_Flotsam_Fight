@@ -43,11 +43,10 @@ class FlotsamFightEnv(gym.Env):
 		#The goal of this is to get 
 		if (self.gameWinner):
 			return False
-
+	
 		player = None
 		for i in range(len(self.players)):
 			player = self.players[i]
-
 			if (player == self.firstPlayer):
 				self.roundNumber = self.roundNumber + 1
 
@@ -70,6 +69,9 @@ class FlotsamFightEnv(gym.Env):
 				self.firstPlayer = self.players[0]
 				self.nextPlayerIndex = 0
 				self.b = Board(self.number_of_players) #Wipe the board and start a new trick
+				self.printNewTrick(loud)
+				if (not self.firstPlayer.isAgent):
+					self.step(action, loud)
 				break
 			elif(play == Player.PASS):
 				self.nextPlayerIndex = (i+1) % len(self.players)
@@ -78,7 +80,7 @@ class FlotsamFightEnv(gym.Env):
 				break	
 
 		self.players.rotate(-1*self.nextPlayerIndex)
-
+	
 		#Observations
 		boardState = self.b.state()
 		hand = player.hand.cardValues()
