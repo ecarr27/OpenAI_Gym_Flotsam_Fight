@@ -38,7 +38,31 @@ class FlotsamFightEnv(gym.Env):
 
 		if (self.agents(self.players) and not self.players[0].isAgent): #Let all non-agent players play so the next time step() is called, an agent will be up
 			self.step(loud)
-  
+	"""
+		Cases: 
+			Normal play: move to the next player in line
+			False play: Stay on current player
+			Someone Won: Stop the loop
+				gameWon()
+				select the winner
+				Update scores
+				print scores
+			Normal pass: move to the next player in line
+			All but 1 pass: 
+				If next person (who is also the last person to play) has exactly 1 card left - move to the next player 
+				If next person (who is also the last person to play) has more than 1 card left - move to the next player + new trick()
+				newTrick()
+					round increments
+					player that starts trick is now the firstPlayer (used for round counting)
+					those with 1 card, get two more
+					new board
+
+			After we decide who the next player is:
+				If they are an agent: break
+				If they aren't an agent: autoPlay
+
+			
+	"""
 	def step(self, action=None, loud=True):
 		if (self.gameWinner):
 			return False
@@ -81,19 +105,6 @@ class FlotsamFightEnv(gym.Env):
 				if (not self.firstPlayer.isAgent):										#Need to fast forward to the next agent
 					print("Hit10")
 					self.step(action, loud) 
-					"""
-					This doesn't work.
-					A, B*, C, D
-
-					A Pass, B* Pass, C Plays, D Pass
-					What should happen:
-						A Pass, pause on B
-
-					What actually happens:
-						C Plays, D Pass, A Pass, pause on A
-
-					Need a way to just play the non agents
-					"""
 				break
 			elif(play == Player.PASS):
 				print("Hit8")
@@ -133,8 +144,60 @@ class FlotsamFightEnv(gym.Env):
 			self.printBoard(self.b)
 			[print(player, ":", player.getValidMoves(self.b)) for player in (player for player in self.players) if player.isAgent]
 
+	def correctPlayerIndex(self, players, index):
+		return index % len(self.players)
+
 	def test(self):
-		return self.agents(self.players)
+		"""
+		This doesn't work.
+		A, B*, C, D
+
+		A Pass, B* Pass, C Plays, D Pass
+		What should happen:
+			A Pass, pause on B
+
+		What actually happens:
+			C Plays, D Pass, A Pass, pause on A
+
+		Need a way to just play the non agents
+
+		I'm going to switch to a while loop. 
+		Instead of iterating through the players, I'm always going to move the list and pick the first player
+		This way, even if the loop breaks (which is expected often) the right player will be first next
+		"""
+		players = deque([Player('A'), Player('B'), Player('C', True), Player('D'), Player('E', True), Player('F')])
+
+		print("Players: [A, B, C*, D, E*, F]   (* == Agent)")
+
+		for i in range(3):
+			print("starting loop")
+			while (True):
+				player = players[0]
+				print(player, "plays")
+				players.rotate(-1)		
+				print("Next player:", players[0])
+				if (players[0].isAgent):
+					break
+
+
+
+
+
+
+
+		# currentPlayer = None
+		# startPlayer = players[0]
+
+		# for i in range(5):
+		# 	print("starting loop")
+		# 	nextPlayer = None
+		# 	for player in players:
+		# 		nextPlayerIndex = self.correctPlayerIndex(players, players.index(player)+1)
+		# 		print(player)
+		# 		if (players[nextPlayerIndex].isAgent):
+		# 			break
+		# 	players.rotate(-1*nextPlayerIndex)
+		# return self.agents(self.players)
 
 	def printNewTrick(self, loud=True):
 		if (loud):
