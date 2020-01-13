@@ -22,7 +22,13 @@ class Board:
 	def canAddCardToLifeboat(self, card, lifeboatNumber):
 		if (not lifeboatNumber in self.validLifeboats):
 			return False
-		return self.lifeboat(lifeboatNumber).canAddCard(card)
+		elif (len(self.usedLifeboats) >= self.playerCount):
+			if (lifeboatNumber in self.usedLifeboats):
+				return self.lifeboat(lifeboatNumber).canAddCard(card)
+			else:
+				return False
+		else:
+			return self.lifeboat(lifeboatNumber).canAddCard(card)
 
 	def getValidLifeboatsForCard(self, card):
 		validLifeboatsForCard = []
@@ -32,7 +38,9 @@ class Board:
 		return validLifeboatsForCard
 
 	def useALifeboat(self, lifeboatNumber):
-		self.usedLifeboats.append(lifeboatNumber)
+		if (not lifeboatNumber in self.usedLifeboats):
+			self.usedLifeboats.append(lifeboatNumber)
+
 		if (len(self.usedLifeboats) >= self.playerCount):
 			self.validLifeboats = self.usedLifeboats
 
@@ -53,6 +61,13 @@ class Board:
 
 	def state(self):
 		return [lifeboat.highestValue() for lifeboat in self.lifeboats]
+
+	def setBoard(self, cards):
+		i = 0
+		for card in cards:
+			if (card):
+				self.addCardToLifeboat(card, self.lifeboatNumbers[i])
+		i = i + 1
 
 	def __str__(self):
 		boardString = ' '.join(str(i).rjust(2) for i in self.lifeboatNumbers)

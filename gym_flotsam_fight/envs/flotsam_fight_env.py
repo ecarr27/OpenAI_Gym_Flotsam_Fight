@@ -2,9 +2,6 @@ import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
 
-from collections import deque
-from itertools import cycle
-
 from Card import Card
 from Deck import Deck
 from Hand import Hand
@@ -15,7 +12,7 @@ class FlotsamFightEnv(gym.Env):
 	metadata = {'render.modes': ['human']}
 
 	def __init__(self, loud=False):
-		self.players = deque([Player("Albus"), Player("Bobby", True), Player("Chloe"), Player("Debra")])
+		self.players = [Player("Albus"), Player("Bobby"), Player("Chloe"), Player("Debra")]
 		self.number_of_players = len(self.players)
 
 		self.number_of_cards_per_hand = 10
@@ -31,7 +28,7 @@ class FlotsamFightEnv(gym.Env):
 		[player.hand.sort() for player in self.players]
 
 		self.gameWinner = False
-		self.roundNumber = 0
+		self.roundNumber = 1
 		self.i = 0
 		self.roundLeader = self.players[self.i]
 		self.passCount = 0
@@ -62,6 +59,8 @@ class FlotsamFightEnv(gym.Env):
 	"""
 	def step(self, action=None, loud=True):
 		while (not self.gameWinner):
+			if (self.i == self.getIndexOfPlayer(self.roundLeader)):
+				self.render()
 			player = self.players[self.i]
 			self.lastAgentToStep = player if player.isAgent else self.lastAgentToStep
 			self.roundNumber = self.roundNumber + 1 if player == self.roundLeader else self.roundNumber
@@ -97,8 +96,8 @@ class FlotsamFightEnv(gym.Env):
 	def reset(self):
 		self.__init__()
   
-	def render(self, mode='human', close=False):
-		self.printRoundHeader(self.roundNumber, self.players, self.passedPlayers(self.players), True)
+	def render(self):
+		self.printRoundHeader(self.roundNumber, self.players, self.i, self.passedPlayers(self.players), True)
 		if (self.gameWinner):
 			self.printGameWinner(self.gameWinner, self.roundNumber, True)
 			self.printPlayerScores(self.players)
@@ -107,11 +106,13 @@ class FlotsamFightEnv(gym.Env):
 			[print(player, ":", player.getValidMoves(self.b)) for player in (player for player in self.players) if player.isAgent]
 
 	def newTrick(self, loud):
+		self.printNewTrick(loud)
 		[self.deal2Cards(self.d, player, loud) for player in self.players] 	#If a player is down to 1 card at the start of a trick, deal them 2 more cards
 		[player.newTrick() for player in self.players]
 		self.roundLeader = self.players[self.i]
+		print("New Trick - Round Leader:", self.roundLeader)
 		self.b = Board(self.number_of_players) 								#Wipe the board and start a new trick
-		self.printNewTrick(loud)
+		self.printRoundHeader(self.roundNumber, self.players, self.i, self.passedPlayers(self.players), loud)
 
 	def gameWon(self, player, loud):
 		self.gameWinner = player
@@ -150,42 +151,16 @@ class FlotsamFightEnv(gym.Env):
 		self.i = self.nextIndex(players, i)
 		return True			
 
+	def getIndexOfPlayer(self, targetPlayer, players=None):
+		players = self.players if players == None else players
+		return players.index(targetPlayer)
+
 	def correctPlayerIndex(self, players, index):
 		return index % len(self.players)
 
 	def test(self):
-		"""
-		This doesn't work.
-		A, B*, C, D
-
-		A Pass, B* Pass, C Plays, D Pass
-		What should happen:
-			A Pass, pause on B
-
-		What actually happens:
-			C Plays, D Pass, A Pass, pause on A
-
-		Need a way to just play the non agents
-
-		I'm going to switch to a while loop. 
-		Instead of iterating through the players, I'm always going to move the list and pick the first player
-		This way, even if the loop breaks (which is expected often) the right player will be first next
-		"""
-		players = deque([Player('A'), Player('B'), Player('C', True), Player('D'), Player('E', True), Player('F')])
-
-		print("Players: [A, B, C*, D, E*, F]   (* == Agent)")
-
-		i = 0
-		for j in range(3):
-			print("starting loop")
-			while (True):
-				player = players[i]
-				print(player, "plays")
-				i = ((i+1) % (len(players)))
-				# players.rotate(-1)		
-				print("Next player:", players[i])
-				if (players[i].isAgent):
-					break
+		print(self.b.validLifeboats)
+		print(self.b.usedLifeboats)
 
 	def printNewTrick(self, loud=True):
 		if (loud):
@@ -195,19 +170,23 @@ class FlotsamFightEnv(gym.Env):
 		if (loud):
 			print("\n___ ROUND", roundNumber, "___")
 
-	def printCurrentHands(self, players, loud=True):
+	def printCurrentHands(self, players, index, loud=True):
 		if (loud):
 			print("Current Hands:")
-			[print(player, "(", len(player.hand.cards), ")", ":", player.hand.list()) for player in players]
+
+			for count in range(len(players)):
+				player = players[index]
+				print(player, "(", len(player.hand.cards), ")", ":", player.hand.list())
+				index = self.nextIndex(players, index)
 
 	def printPassedPlayers(self, passedPlayers, loud=True):
 		if (loud):
 			print("Passed Players:",passedPlayers)
 
-	def printRoundHeader(self, roundNumber, players, passedPlayers, loud=True):
+	def printRoundHeader(self, roundNumber, players, index, passedPlayers, loud=True):
 		if (loud):
 			self.printRoundNumber(roundNumber, loud)
-			self.printCurrentHands(players, loud)
+			self.printCurrentHands(players, index, loud)
 			self.printPassedPlayers(passedPlayers, loud)
 			print("----------------\n")
 

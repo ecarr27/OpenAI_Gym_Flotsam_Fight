@@ -7,7 +7,7 @@ class Player:
 	PASS = "Pass"
 	WON  = "WON"
 	ACTION_PASS = [-1, -1]
-	ACTION_FIRST = [-2, -2]
+	ACTION_FIRST_OPTION = [-2, -2]
 	 
 
 	def __init__(self, name, isAgent=False, alwaysPass=False):
@@ -30,7 +30,7 @@ class Player:
 
 	def playCard(self, board, cardNumber, lifeboatNumber):
 		if (self.isPass):
-			return False
+			return self.PASS
 		card = self.hand.getCard(cardNumber)
 		return self.hand.playCard(board, card, lifeboatNumber)
 
@@ -56,17 +56,19 @@ class Player:
 		if (len(validMoves) and not self.alwaysPass): #If player has valid moves, play one
 			card, lifeboat = validMoves[0][0], validMoves[0][1][0]
 			self.printCardToPlay(card, lifeboat, enabled)
-			self.playCard(board, card, lifeboat)
+			play = self.playCard(board, card, lifeboat)
 			if (len(self.hand.cards) == 0):
 				return self.WON
-			return self.PLAY
+			if (play == True):
+				play = self.PLAY
+			return play
 		else: #If no valid moves, pass							
 			self.printPlayerPasses(enabled)
 			self.passTurn()
 			return self.PASS
 
 	def play(self, board, action, enabled=True):
-		if (not self.isAgent or action == self.ACTION_FIRST):
+		if (not self.isAgent or action == self.ACTION_FIRST_OPTION):
 			return self.autoPlay(board, enabled)
 		elif (action == self.ACTION_PASS or self.isPass):
 			self.printPlayerPasses(enabled)
