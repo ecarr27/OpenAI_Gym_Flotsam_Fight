@@ -15,15 +15,41 @@ class FlotsamFightEnv(gym.Env):
 		self.players = [Player("Albus"), Player("Bobby"), Player("Chloe"), Player("Debra")]
 		self.number_of_players = len(self.players)
 
-		self.number_of_cards_per_hand = 10
+		self.number_of_cards_per_hand = 2
 
 		self.d = Deck()
 		self.d.shuffle()
 
+# 		___ ROUND 8 ___
+# Current Hands:
+# Albus ( 3 ) : ['81', '88', '90']
+# Bobby ( 3 ) : ['3', '36', '98']
+# Chloe ( 4 ) : ['24', '25', '44', '76']
+# Debra ( 3 ) : ['40', '93', '96']
+# Passed Players: ['Chloe']
+# ----------------
+
+#   3  4  5  6  7  8  9 10
+#  75 92 65  0 77  0  0  0 
+
 		self.b = Board(self.number_of_players)
-		for i in range(self.number_of_cards_per_hand):
-				for player in self.players:
-					player.hand.addCard(self.d.deal())
+		self.b.setBoard([Card(75), Card(92), Card(65), None, Card(77), None, None, None])
+		self.players[0].hand.addCard(Card(81))
+		self.players[0].hand.addCard(Card(88))
+		self.players[0].hand.addCard(Card(90))
+		self.players[1].hand.addCard(Card(3))
+		self.players[1].hand.addCard(Card(36))
+		self.players[1].hand.addCard(Card(98))
+		self.players[2].hand.addCard(Card(24))
+		self.players[2].hand.addCard(Card(25))
+		self.players[2].hand.addCard(Card(44))
+		self.players[2].hand.addCard(Card(76))
+		self.players[3].hand.addCard(Card(40))
+		self.players[3].hand.addCard(Card(93))
+		self.players[3].hand.addCard(Card(96))
+		# for i in range(self.number_of_cards_per_hand):
+		# 		for player in self.players:
+		# 			player.hand.addCard(self.d.deal())
 
 		[player.hand.sort() for player in self.players]
 

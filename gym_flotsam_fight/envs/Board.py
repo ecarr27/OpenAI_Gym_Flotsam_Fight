@@ -67,7 +67,7 @@ class Board:
 		for card in cards:
 			if (card):
 				self.addCardToLifeboat(card, self.lifeboatNumbers[i])
-		i = i + 1
+			i = i + 1
 
 	def __str__(self):
 		boardString = ' '.join(str(i).rjust(2) for i in self.lifeboatNumbers)
