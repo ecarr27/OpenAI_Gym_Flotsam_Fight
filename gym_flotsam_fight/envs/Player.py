@@ -52,7 +52,7 @@ class Player:
 
 	def autoPlay(self, board, enabled=True):
 		validMoves = self.getValidMoves(board)
-		self.printValidMoves(validMoves, enabled)
+		# self.printValidMoves(validMoves, enabled)
 		if (len(validMoves) and not self.alwaysPass): #If player has valid moves, play one
 			card, lifeboat = validMoves[0][0], validMoves[0][1][0]
 			self.printCardToPlay(card, lifeboat, enabled)
@@ -78,6 +78,7 @@ class Player:
 		self.printCardToPlay(action[0], action[1], enabled)
 		successfulPlay = self.playCard(board, action[0], action[1])
 		if (not successfulPlay):
+			print("That was not a valid play")
 			return False
 		elif (successfulPlay and len(self.hand.cards) == 0):
 			returnValue = self.WON
@@ -96,7 +97,7 @@ class Player:
 
 	def printCardToPlay(self, card, lifeboat, enabled=True):
 		if(enabled):
-			print("Playing", card, "in boat", lifeboat)
+			print(self.name, "plays", card, "in boat", lifeboat)
 
 	def printPlayerPasses(self, enabled=True):
 		if(enabled):

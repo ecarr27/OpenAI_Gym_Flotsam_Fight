@@ -15,41 +15,16 @@ class FlotsamFightEnv(gym.Env):
 		self.players = [Player("Albus"), Player("Bobby"), Player("Chloe"), Player("Debra")]
 		self.number_of_players = len(self.players)
 
-		self.number_of_cards_per_hand = 2
+		self.number_of_cards_per_hand = 10
 
-		self.d = Deck()
-		self.d.shuffle()
+		self.deck = Deck()
+		self.deck.shuffle()
 
-# 		___ ROUND 8 ___
-# Current Hands:
-# Albus ( 3 ) : ['81', '88', '90']
-# Bobby ( 3 ) : ['3', '36', '98']
-# Chloe ( 4 ) : ['24', '25', '44', '76']
-# Debra ( 3 ) : ['40', '93', '96']
-# Passed Players: ['Chloe']
-# ----------------
+		self.board = Board(self.number_of_players)
 
-#   3  4  5  6  7  8  9 10
-#  75 92 65  0 77  0  0  0 
-
-		self.b = Board(self.number_of_players)
-		self.b.setBoard([Card(75), Card(92), Card(65), None, Card(77), None, None, None])
-		self.players[0].hand.addCard(Card(81))
-		self.players[0].hand.addCard(Card(88))
-		self.players[0].hand.addCard(Card(90))
-		self.players[1].hand.addCard(Card(3))
-		self.players[1].hand.addCard(Card(36))
-		self.players[1].hand.addCard(Card(98))
-		self.players[2].hand.addCard(Card(24))
-		self.players[2].hand.addCard(Card(25))
-		self.players[2].hand.addCard(Card(44))
-		self.players[2].hand.addCard(Card(76))
-		self.players[3].hand.addCard(Card(40))
-		self.players[3].hand.addCard(Card(93))
-		self.players[3].hand.addCard(Card(96))
-		# for i in range(self.number_of_cards_per_hand):
-		# 		for player in self.players:
-		# 			player.hand.addCard(self.d.deal())
+		for i in range(self.number_of_cards_per_hand):
+			for player in self.players:
+				player.hand.addCard(self.deck.deal())
 
 		[player.hand.sort() for player in self.players]
 
@@ -93,7 +68,7 @@ class FlotsamFightEnv(gym.Env):
 			self.lastAgentToStep = player if player.isAgent else self.lastAgentToStep
 			self.roundNumber = self.roundNumber + 1 if player == self.roundLeader else self.roundNumber
 
-			play = player.play(self.b, action, loud)
+			play = player.play(self.board, action, loud)
 			if (play == Player.PLAY): 										#If the play was valid and nothing special happens
 				self.passCount = 0 
 				self.incrementIndex()   									#Continue on to the next player
@@ -133,26 +108,27 @@ class FlotsamFightEnv(gym.Env):
 			self.printGameWinner(self.gameWinner, self.roundNumber, True)
 			self.printPlayerScores(self.players)
 		else:
-			self.printBoard(self.b)
-			[print(player, ":", player.getValidMoves(self.b)) for player in (player for player in self.players) if player.isAgent]
+			self.printBoard(self.board)
+			[print(player, ":", player.getValidMoves(self.board)) for player in (player for player in self.players) if player.isAgent]
+			pass
 
 	def newTrick(self, loud):
 		self.printNewTrick(loud)
-		[self.deal2Cards(self.d, player, loud) for player in self.players] 	#If a player is down to 1 card at the start of a trick, deal them 2 more cards
+		[self.deal2Cards(self.deck, player, loud) for player in self.players] 	#If a player is down to 1 card at the start of a trick, deal them 2 more cards
 		[player.newTrick() for player in self.players]
-		self.b = Board(self.number_of_players) 								#Wipe the board and start a new trick
+		self.board = Board(self.number_of_players) 								#Wipe the board and start a new trick
 
 		self.incrementIndex()
 		if (self.roundLeader != self.players[self.i]):
 			self.roundLeader = self.players[self.i]
 			print("New Trick - Round Leader:", self.roundLeader)
-			self.printRoundHeader(self.roundNumber, self.players, self.i, self.passedPlayers(self.players), loud)
 		else:
 			print("New Trick -", self.roundLeader, "remains the Round Leader") #Round header will print automatically at the top of the step loop
 
 	def gameWon(self, player, loud):
 		self.gameWinner = player
 		self.updateScores(self.players)
+		print(); print(self.gameWinner, "won in", self.roundNumber-1,"rounds!!")
 		self.printPlayerScores(self.players, loud)
 
 	def getStepReturns(self, player, reward=0):
@@ -160,7 +136,7 @@ class FlotsamFightEnv(gym.Env):
 			return False
 
 		#Observations
-		boardState = self.b.state()
+		boardState = self.board.state()
 		hand = player.hand.cardValues()
 		competitorCardCounts = self.competitorCardCounts(self.players, player)
 
@@ -171,7 +147,7 @@ class FlotsamFightEnv(gym.Env):
 		isWon = True if self.gameWinner else False
 
 		#Additional Information 
-		agentMoves = player.getValidMoves(self.b)
+		agentMoves = player.getValidMoves(self.board)
 		competitorsHands = self.competitorsHands(self.players, player)
 
 		return [[boardState, hand, competitorCardCounts, self.roundNumber], reward, isWon, [agentMoves, competitorsHands]]
@@ -195,8 +171,8 @@ class FlotsamFightEnv(gym.Env):
 		return index % len(self.players)
 
 	def test(self):
-		print(self.b.validLifeboats)
-		print(self.b.usedLifeboats)
+		print(self.board.validLifeboats)
+		print(self.board.usedLifeboats)
 
 	def printNewTrick(self, loud=True):
 		if (loud):
