@@ -72,6 +72,8 @@ class FlotsamFightEnv(gym.Env):
 				All but 1 pass: 
 					If next person (who is also the last person to play) has more than 1 card left - move to the next player + new trick()
 					If next person (who is also the last person to play) has exactly 1 card left - move to the next player 
+				All players have passed:
+					The last person must have 1 card left. Give them a chance to play it. Increment the index in case they don't win.
 				Normal pass:
 					Move to the next player in line		
 			Someone Won: 
@@ -100,13 +102,16 @@ class FlotsamFightEnv(gym.Env):
 				break 
 			elif (play == Player.PASS):
 				self.passCount = self.passCount + 1
-				if (self.passCount >= (len(self.players)-1) and 			#If everyone but one player has passed
+				if (self.passCount == (len(self.players)-1) and 			#If everyone but one player has passed
 					len(self.players[self.nextIndex()].hand.cards) > 1):   	#And that person has more than 1 card in their hand
-					self.incrementIndex()
 					self.newTrick(loud)									 	#Call a new trick
-				elif (self.passCount >= (len(self.players)-1) and 			#If everyone but one player has passed
+				elif (self.passCount == (len(self.players)-1) and 			#If everyone but one player has passed
 					len(self.players[self.nextIndex()].hand.cards) == 1):  	#And that person has exactly 1 card in their hand
 					self.incrementIndex() 								  	#Let them play
+					self.printExtraPlayExplaination(self.players[self.i], loud)
+				elif (self.passCount == (len(self.players))):
+					self.printExtraPlayFailDisappointment(player, loud)
+					self.newTrick(loud)
 				else: 													  	#If not everyone has passed
 					self.incrementIndex()									#Let the next player play
 			elif (play == Player.WON):
@@ -135,10 +140,15 @@ class FlotsamFightEnv(gym.Env):
 		self.printNewTrick(loud)
 		[self.deal2Cards(self.d, player, loud) for player in self.players] 	#If a player is down to 1 card at the start of a trick, deal them 2 more cards
 		[player.newTrick() for player in self.players]
-		self.roundLeader = self.players[self.i]
-		print("New Trick - Round Leader:", self.roundLeader)
 		self.b = Board(self.number_of_players) 								#Wipe the board and start a new trick
-		self.printRoundHeader(self.roundNumber, self.players, self.i, self.passedPlayers(self.players), loud)
+
+		self.incrementIndex()
+		if (self.roundLeader != self.players[self.i]):
+			self.roundLeader = self.players[self.i]
+			print("New Trick - Round Leader:", self.roundLeader)
+			self.printRoundHeader(self.roundNumber, self.players, self.i, self.passedPlayers(self.players), loud)
+		else:
+			print("New Trick -", self.roundLeader, "remains the Round Leader") #Round header will print automatically at the top of the step loop
 
 	def gameWon(self, player, loud):
 		self.gameWinner = player
@@ -260,6 +270,14 @@ class FlotsamFightEnv(gym.Env):
 	def printPlayerCardCounts(self, players, loud=True):
 		if (loud):
 			[print(player, ":", len(player.hand.cards)) for player in players]
+
+	def printExtraPlayExplaination(self, player, loud=True):
+		if (loud):
+			print("Everyone has passed but",player, "has one more card left. They have a chance to close out!")
+
+	def printExtraPlayFailDisappointment(self, player, loud=True):
+		if (loud):
+			print(player, "wasn't able to finish the job!")
 
 	def competitorCardCounts(self, players, targetPlayer):
 		cardCounts = []
