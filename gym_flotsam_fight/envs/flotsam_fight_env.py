@@ -10,19 +10,29 @@ from Player import Player
 
 class FlotsamFightEnv(gym.Env):
 	metadata = {'render.modes': ['human']}
+	cardsPerHandByPlayerCount = {2:10, 3:10, 4:10, 5:10, 6:8}
+	playerNames = ["Albus", "Beaux", "Coral", "Daria", "Edgar", "Fiona"]
 
-	def __init__(self, loud=False):
-		self.players = [Player("Albus"), Player("Bobby"), Player("Chloe"), Player("Debra")]
-		self.number_of_players = len(self.players)
+	def __init__(self, numberOfPlayers=4, numberOfAgents=1):
+		if (not numberOfPlayers in self.cardsPerHandByPlayerCount):
+			print("Please use a number of players between 2-6 (inclusive)")
+			return None
 
-		self.number_of_cards_per_hand = 10
+		self.numberOfPlayers = numberOfPlayers
+		self.numberOfAgents = numberOfAgents
+
+		self.numberOfCardsPerHand = self.cardsPerHandByPlayerCount[self.numberOfPlayers]
+		self.players = self.pickPlayers(numberOfPlayers, numberOfAgents)
+		# self.numberOfPlayers = 6
+		# self.numberOfCardsPerHand = self.cardsPerHandByPlayerCount[self.numberOfPlayers]
+		# self.players = [Player("Albus"), Player("Beaux"), Player("Cairo"), Player("Daria"), Player("Edgar"), Player("Fiona")]
 
 		self.deck = Deck()
 		self.deck.shuffle()
 
-		self.board = Board(self.number_of_players)
+		self.board = Board(self.numberOfPlayers)
 
-		for i in range(self.number_of_cards_per_hand):
+		for i in range(self.numberOfCardsPerHand):
 			for player in self.players:
 				player.hand.addCard(self.deck.deal())
 
@@ -57,13 +67,11 @@ class FlotsamFightEnv(gym.Env):
 			After we decide who the next player is:
 				If they are an agent: break
 				If they aren't an agent: continue
-
-			
 	"""
-	def step(self, action=None, loud=True):
+	def step(self, action=None, loud=False):
 		while (not self.gameWinner):
 			if (self.i == self.getIndexOfPlayer(self.roundLeader)):
-				self.render()
+				self.render(loud)
 			player = self.players[self.i]
 			self.lastAgentToStep = player if player.isAgent else self.lastAgentToStep
 			self.roundNumber = self.roundNumber + 1 if player == self.roundLeader else self.roundNumber
@@ -99,40 +107,51 @@ class FlotsamFightEnv(gym.Env):
 
 		return self.getStepReturns(self.lastAgentToStep)
 
-	def reset(self):
-		self.__init__()
+	def reset(self, numberOfPlayers=None, numberOfAgents=None):
+		numberOfPlayers = numberOfPlayers if numberOfPlayers != None else self.numberOfPlayers
+		numberOfAgents = numberOfAgents if numberOfAgents != None else self.numberOfAgents
+
+		self.__init__(numberOfPlayers, numberOfAgents)
   
-	def render(self):
-		self.printRoundHeader(self.roundNumber, self.players, self.i, self.passedPlayers(self.players), True)
+	def render(self, loud=False):
+		self.printRoundHeader(self.roundNumber, self.players, self.i, self.passedPlayers(self.players), loud)
 		if (self.gameWinner):
-			self.printGameWinner(self.gameWinner, self.roundNumber, True)
+			self.printGameWinner(self.gameWinner, self.roundNumber, loud)
 			self.printPlayerScores(self.players)
 		else:
-			self.printBoard(self.board)
+			self.printBoard(self.board, loud)
 			[print(player, ":", player.getValidMoves(self.board)) for player in (player for player in self.players) if player.isAgent]
 			pass
+
+	def pickPlayers(self, numberOfPlayers, numberOfAgents):
+		players = []
+		for i in range(numberOfPlayers):
+			isAgent = numberOfAgents > 0
+			players.append(Player(self.playerNames[i], isAgent))
+			numberOfAgents = numberOfAgents - 1
+		return players
+
 
 	def newTrick(self, loud):
 		self.printNewTrick(loud)
 		[self.deal2Cards(self.deck, player, loud) for player in self.players] 	#If a player is down to 1 card at the start of a trick, deal them 2 more cards
 		[player.newTrick() for player in self.players]
-		self.board = Board(self.number_of_players) 								#Wipe the board and start a new trick
+		self.board = Board(self.numberOfPlayers) 								#Wipe the board and start a new trick
 
 		self.incrementIndex()
-		if (self.roundLeader != self.players[self.i]):
-			self.roundLeader = self.players[self.i]
-			print("New Trick - Round Leader:", self.roundLeader)
-		else:
-			print("New Trick -", self.roundLeader, "remains the Round Leader") #Round header will print automatically at the top of the step loop
+		self.printRoundLeader(loud)
 
 	def gameWon(self, player, loud):
 		self.gameWinner = player
 		self.updateScores(self.players)
-		print(); print(self.gameWinner, "won in", self.roundNumber-1,"rounds!!")
+		if (loud):
+			print(); print(self.gameWinner, "won in", self.roundNumber-1,"rounds!!")
 		self.printPlayerScores(self.players, loud)
 
 	def getStepReturns(self, player, reward=0):
-		if (not player):
+		if (self.gameWinner and not player):
+			return self.getPlayerScores(self.players)
+		elif (not self.gameWinner and not player):
 			return False
 
 		#Observations
@@ -202,6 +221,17 @@ class FlotsamFightEnv(gym.Env):
 			self.printPassedPlayers(passedPlayers, loud)
 			print("----------------\n")
 
+	def printRoundLeader(self, loud=True):
+		if (self.roundLeader != self.players[self.i] and loud):
+			self.roundLeader = self.players[self.i]
+			print("New Trick - Round Leader:", self.roundLeader)
+		elif (self.roundLeader != self.players[self.i] and not loud):
+			self.roundLeader = self.players[self.i]
+		elif (loud):
+			print("New Trick -", self.roundLeader, "remains the Round Leader") #Round header will print automatically at the top of the step loop
+		else:
+			pass
+
 	def printLastPlayerToPlay(self, lastPlayerToPlay, loud=True):
 		if (loud):
 			print("lastPlayerToPlay:", lastPlayerToPlay)
@@ -238,6 +268,13 @@ class FlotsamFightEnv(gym.Env):
 
 			for player in reversed(list(sortedScores)):
 				print(player, str(sortedScores[player]).rjust(2))
+
+	def getPlayerScores(self, players):
+		sortedScores = self.sortScores(players)
+		scores = {}
+		for player in reversed(list(sortedScores)):
+			scores[player.name] = sortedScores[player]
+		return scores
 
 	def printBoard(self, board, loud=True):
 		if (loud):
@@ -315,4 +352,5 @@ class FlotsamFightEnv(gym.Env):
 		highestOfHighestCards = list(sortedScores)[-1]
 
 		lowestOfHighestCards.addScore(1)
-		highestOfHighestCards.addScore(-1)
+		if (len(list(sortedScores)) > 1):
+			highestOfHighestCards.addScore(-1)
