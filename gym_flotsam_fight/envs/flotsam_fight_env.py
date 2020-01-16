@@ -44,6 +44,7 @@ class FlotsamFightEnv(gym.Env):
 		self.roundLeader = self.players[self.i]
 		self.passCount = 0
 		self.lastAgentToStep = None
+		self.lastAgentsPlay = None
 
 		if (self.agents(self.players) and not self.players[0].isAgent): 	#Let all non-agent players play so the next time step() is called, an agent will be up
 			self.step(loud)
@@ -73,14 +74,17 @@ class FlotsamFightEnv(gym.Env):
 			if (self.i == self.getIndexOfPlayer(self.roundLeader)):
 				self.render(loud)
 			player = self.players[self.i]
-			self.lastAgentToStep = player if player.isAgent else self.lastAgentToStep
 			self.roundNumber = self.roundNumber + 1 if player == self.roundLeader else self.roundNumber
 
 			play = player.play(self.board, action, loud)
+			if (player.isAgent): 											#If player is agent, record the results of the play to calculate the reward later
+				self.lastAgentToStep = player 
+				self.lastAgentsPlay = play
+
 			if (play == Player.PLAY): 										#If the play was valid and nothing special happens
 				self.passCount = 0 
 				self.incrementIndex()   									#Continue on to the next player
-			elif (play == False): 											#If the action was invalid
+			elif (play == Player.INVALID): 									#If the action was invalid
 				#self.i = self.i 											#Do nothing. Keep the index the same so the current player goes again
 				break 
 			elif (play == Player.PASS):
@@ -105,13 +109,16 @@ class FlotsamFightEnv(gym.Env):
 			if (self.players[self.i].isAgent):
 				break
 
-		return self.getStepReturns(self.lastAgentToStep)
+		return self.getStepReturns(self.lastAgentToStep, self.lastAgentsPlay)
 
 	def reset(self, numberOfPlayers=None, numberOfAgents=None):
 		numberOfPlayers = numberOfPlayers if numberOfPlayers != None else self.numberOfPlayers
 		numberOfAgents = numberOfAgents if numberOfAgents != None else self.numberOfAgents
 
 		self.__init__(numberOfPlayers, numberOfAgents)
+
+		if (self.agents(self.players) and self.players[self.i].isAgent):
+			return self.getInitReturns(self.players[self.i])
   
 	def render(self, loud=False):
 		self.printRoundHeader(self.roundNumber, self.players, self.i, self.passedPlayers(self.players), loud)
@@ -148,12 +155,7 @@ class FlotsamFightEnv(gym.Env):
 			print(); print(self.gameWinner, "won in", self.roundNumber-1,"rounds!!")
 		self.printPlayerScores(self.players, loud)
 
-	def getStepReturns(self, player, reward=0):
-		if (self.gameWinner and not player):
-			return self.getPlayerScores(self.players)
-		elif (not self.gameWinner and not player):
-			return False
-
+	def getInitReturns(self, player):
 		#Observations
 		boardState = self.board.state()
 		hand = player.hand.cardValues()
@@ -170,6 +172,42 @@ class FlotsamFightEnv(gym.Env):
 		competitorsHands = self.competitorsHands(self.players, player)
 
 		return [[boardState, hand, competitorCardCounts, self.roundNumber], reward, isWon, [agentMoves, competitorsHands]]
+
+	def getStepReturns(self, player, play, reward=0):
+		if (self.gameWinner and not player):
+			return self.getPlayerScores(self.players)
+		elif (not self.gameWinner and not player):
+			return False
+
+		#Observations
+		boardState = self.board.state()
+		hand = player.hand.cardValues()
+		competitorCardCounts = self.competitorCardCounts(self.players, player)
+
+		#Reward
+		reward = self.calculateReward(player, play)
+
+		#isDone
+		isWon = True if self.gameWinner else False
+
+		#Additional Information 
+		agentMoves = player.getValidMoves(self.board)
+		competitorsHands = self.competitorsHands(self.players, player)
+
+		return [[boardState, hand, competitorCardCounts, self.roundNumber], reward, isWon, [agentMoves, competitorsHands]]
+
+	def calculateReward(self, player, play):
+		if (play == Player.PLAY):
+			return 0
+		elif (play == Player.INVALID):
+			return -1
+		elif (play == Player.PASS):
+			return -10
+		elif (play == Player.WON):
+			return 50
+		else:
+			print("Something when wrong with the rewards calculation. Play:", play)
+			return 0
 
 	def nextIndex(self, players=None, i=None):
 		players = self.players if players == None else players

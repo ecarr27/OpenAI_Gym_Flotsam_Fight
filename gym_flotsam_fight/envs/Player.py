@@ -6,6 +6,7 @@ class Player:
 	PLAY = True
 	PASS = "Pass"
 	WON  = "WON"
+	INVALID = "Invalid"
 	ACTION_PASS = [-1, -1]
 	ACTION_FIRST_OPTION = [-2, -2]
 	 
@@ -79,14 +80,14 @@ class Player:
 		successfulPlay = self.playCard(board, action[0], action[1])
 		if (not successfulPlay):
 			print("That was not a valid play")
-			return False
+			return self.INVALID
 		elif (successfulPlay and len(self.hand.cards) == 0):
 			returnValue = self.WON
 		elif (successfulPlay):
 			return successfulPlay
 		else:
 			print("Error in Player.Play()")
-			return False
+			return self.INVALID
 
 	def __str__(self):
 		return self.name
